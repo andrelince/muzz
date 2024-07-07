@@ -1,0 +1,58 @@
+---
+version: '3'
+
+x-healtcheck-settings: &healthcheck-settings
+    interval: 20s
+    timeout: 10s
+    retries: 6
+    start_period: 10s
+
+services:
+  api:
+    image: cosmtrek/air:latest
+    env_file:
+      - ./api/.env
+    volumes:
+      - ./api/:/go/src/github.com/muzz/api
+    working_dir: /go/src/github.com/muzz/api
+    ports:
+      - 3000:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16.2
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql:delegated
+      - ./env/postgres:/docker-entrypoint-initdb.d:cached
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      <<: *healthcheck-settings
+
+  redis:
+    image: redis:6.2-alpine
+    restart: always      
+    ports:
+      - '6379:6379'
+    environment:
+      REDIS_PASSWORD: eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+      REDIS_USER: redis
+    entrypoint: >
+      sh -c "redis-server --save 20 1 --loglevel warning --requirepass $${REDIS_PASSWORD} --user $${REDIS_USER}"
+    volumes: 
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *healthcheck-settings
+
+volumes:
+    postgres_data:
+    redis_data:

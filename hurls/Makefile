@@ -1,0 +1,2 @@
+all:
+	hurl --test *.hurl

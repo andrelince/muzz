@@ -1,0 +1,21 @@
+host: localhost:3000
+info:
+  contact: {}
+  description: This is a API representing a simple dating api system.
+  title: Muzz API
+  version: "1.0"
+paths:
+  /healthz:
+    get:
+      description: Check service health condition
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Check service health
+      tags:
+      - health
+swagger: "2.0"
