@@ -7,6 +7,7 @@ import (
 
 	"github.com/muzz/api/config"
 	"github.com/muzz/api/di"
+	"github.com/muzz/api/pkg/pg"
 	"github.com/muzz/api/rest"
 
 	"github.com/rs/cors"
@@ -16,6 +17,10 @@ import (
 func main() {
 	c, err := di.NewDI()
 	if err != nil {
+		panic(err)
+	}
+
+	if err := c.Invoke(func(migration pg.PgMigration) error { return migration.Up() }); err != nil {
 		panic(err)
 	}
 

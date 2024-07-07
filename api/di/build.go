@@ -26,6 +26,10 @@ func buildConfig(c *dig.Container) error {
 		return err
 	}
 
+	if err := c.Provide(config.NewMigrationSettings); err != nil {
+		return err
+	}
+
 	if err := c.Provide(config.NewRedisSettings); err != nil {
 		return err
 	}
@@ -48,6 +52,10 @@ func buildConfig(c *dig.Container) error {
 		return err
 	}
 
+	if err := c.Provide(pg.NewPgMigration); err != nil {
+		return err
+	}
+
 	if err := c.Provide(func(l *logrus.Logger, c redis.RedisSettings) (*redis.Redis, error) {
 		r, err := redis.NewRedis(c)
 		if err != nil {
@@ -62,8 +70,8 @@ func buildConfig(c *dig.Container) error {
 		return err
 	}
 
-	if err := c.Provide(func(p *pg.Postgres) repository.UserConnector {
-		return repository.NewUserRepo(p)
+	if err := c.Provide(func(l *logrus.Logger, p *pg.Postgres) repository.UserConnector {
+		return repository.NewUserRepo(l, p)
 	}); err != nil {
 		return err
 	}

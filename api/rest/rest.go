@@ -17,5 +17,8 @@ func NewRest(log *logrus.Logger, router *http.ServeMux, r Handler) error {
 	router.HandleFunc("GET /healthz", r.Health)
 	router.Handle("GET /swagger/*", httpSwagger.Handler())
 
+	// user
+	router.HandleFunc("POST /user/create", r.CreateUser)
+
 	return nil
 }

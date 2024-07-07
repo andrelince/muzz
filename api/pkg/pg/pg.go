@@ -36,3 +36,7 @@ func (p Postgres) Close() error {
 func (p Postgres) Raw() *sql.DB {
 	return p.db.DB
 }
+
+func (p Postgres) DBX() *sqlx.DB {
+	return p.db
+}
