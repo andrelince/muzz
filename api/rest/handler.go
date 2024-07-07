@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/muzz/api/rest/definition"
+	"github.com/muzz/api/rest/middleware"
 	"github.com/muzz/api/rest/transformer"
 	"github.com/muzz/api/service"
 	"github.com/sirupsen/logrus"
@@ -146,6 +147,71 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonOut, err := json.Marshal(transformer.FromTokenEntityToDef(out))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonOut); err != nil {
+		WriteError(w, err)
+	}
+}
+
+// Swipe godoc
+//
+// @Summary      Swipe a user
+// @Description  Perform the swipe action on a give user
+// @Tags         login
+// @Produce      json
+// @Success      200  {object}  definitions.Swipe
+// @Router       /swipe [post]
+//
+// @Param        user  body  definitions.SwipeInput  true  "swipe data"
+func (h Handler) Swipe(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	defer r.Body.Close()
+
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, errors.New("failed to read request body"))
+		return
+	}
+
+	var swipe definition.SwipeInput
+	if err = json.Unmarshal(b, &swipe); err != nil {
+		h.log.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err := h.validator.Struct(swipe); err != nil {
+		h.log.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err)
+		return
+	}
+
+	var action bool
+	if swipe.Preference == "yes" {
+		action = true
+	}
+
+	out, err := h.userConn.Swipe(r.Context(), userID, swipe.UserID, action)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.log.Error(err)
+		WriteError(w, err)
+		return
+	}
+
+	jsonOut, err := json.Marshal(transformer.FromMatchEntityToDef(out))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

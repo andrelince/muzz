@@ -16,3 +16,13 @@ type User struct {
 	Gender   string `json:"gender"`
 	Age      int    `json:"age"`
 }
+
+type SwipeInput struct {
+	UserID     int    `json:"user_id" validate:"required"`
+	Preference string `json:"preference" validate:"oneof=yes no"`
+}
+
+type Match struct {
+	MatchID *int `json:"match_id,omitempty"`
+	Matched bool `json:"matched"`
+}

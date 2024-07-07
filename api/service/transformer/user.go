@@ -32,3 +32,12 @@ func FromTokenModelToEntity(in model.Token) entity.Token {
 		Expires: in.Expires,
 	}
 }
+
+func FromMatchModelToEntity(in model.Match) entity.Match {
+	return entity.Match{
+		ID:      in.ID,
+		User1ID: in.User1ID,
+		User2ID: in.User2ID,
+		IsMatch: in.IsMatch,
+	}
+}

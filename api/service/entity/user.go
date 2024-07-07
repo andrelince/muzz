@@ -23,3 +23,10 @@ type Token struct {
 	Token   string
 	Expires int64
 }
+
+type Match struct {
+	ID      int
+	User1ID int
+	User2ID int
+	IsMatch bool
+}

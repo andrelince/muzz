@@ -3,4 +3,4 @@ all:
 %.test:
 	hurl --test $*.hurl
 %.run:
-	hurl $*.hurl
+	hurl -v $*.hurl

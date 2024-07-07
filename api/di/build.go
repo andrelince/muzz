@@ -10,6 +10,7 @@ import (
 	"github.com/muzz/api/pkg/redis"
 	"github.com/muzz/api/repository"
 	"github.com/muzz/api/rest"
+	"github.com/muzz/api/rest/middleware"
 	"github.com/muzz/api/service"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/dig"
@@ -87,6 +88,19 @@ func buildConfig(c *dig.Container) error {
 	}); err != nil {
 		return err
 	}
+
+	if err := c.Provide(func(r repository.AuthConnector) service.AuthConnector {
+		return service.NewAuthService(r)
+	}); err != nil {
+		return err
+	}
+
+	if err := c.Provide(func(s service.AuthConnector) middleware.AuthMiddleware {
+		return middleware.NewAuthHandler(s)
+	}); err != nil {
+		return err
+	}
+
 	if err := c.Provide(rest.NewHandler); err != nil {
 		return err
 	}

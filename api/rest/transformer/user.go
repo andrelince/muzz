@@ -32,3 +32,13 @@ func FromTokenEntityToDef(in entity.Token) definition.Token {
 		Expires: in.Expires,
 	}
 }
+
+func FromMatchEntityToDef(in entity.Match) definition.Match {
+	out := definition.Match{
+		Matched: in.IsMatch,
+	}
+	if in.IsMatch {
+		out.MatchID = &in.ID
+	}
+	return out
+}

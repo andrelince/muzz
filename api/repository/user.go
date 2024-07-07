@@ -4,16 +4,29 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"time"
 
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/muzz/api/pkg/pg"
 	"github.com/muzz/api/repository/model"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	uniqueConstraintCode pq.ErrorCode = "23505"
+)
+
+var (
+	ErrSwipeAlreadyExists = errors.New("swipe already exists")
 )
 
 //go:generate mockgen -destination=./mocks/mock_user_connector.go -package=mocks github.com/muzz/api/repository UserConnector
 type UserConnector interface {
 	CreateUser(ctx context.Context, user model.UserInput) (model.User, error)
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
+	Swipe(ctx context.Context, userID, swipedUserID int, status bool) (model.Match, error)
 }
 
 type UserRepo struct {
@@ -29,7 +42,6 @@ func NewUserRepo(l *logrus.Logger, db *pg.Postgres) UserRepo {
 }
 
 func (r UserRepo) CreateUser(ctx context.Context, in model.UserInput) (model.User, error) {
-	r.l.Info("creating user")
 	query := `INSERT INTO users (email, password, name, gender, date_of_birth) 
               VALUES (:email, :password, :name, :gender, :date_of_birth) RETURNING *`
 
@@ -59,4 +71,72 @@ func (r UserRepo) GetUserByEmail(ctx context.Context, email string) (model.User,
 		return model.User{}, err
 	}
 	return out, nil
+}
+
+func (r UserRepo) Swipe(ctx context.Context, userID, swipedUserID int, status bool) (model.Match, error) {
+	tx, err := r.db.DBX().Beginx()
+	if err != nil {
+		return model.Match{}, err
+	}
+
+	defer func(tx *sqlx.Tx) {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}(tx)
+
+	swipe := model.Swipe{
+		UserID:       userID,
+		SwipedUserID: swipedUserID,
+		SwipeStatus:  status,
+		CreatedAt:    time.Now(),
+	}
+
+	_, err = tx.NamedExecContext(ctx, `INSERT INTO user_swipes (user_id, swiped_user_id, swipe_status, created_at) 
+                                VALUES (:user_id, :swiped_user_id, :swipe_status, :created_at)
+                                ON CONFLICT (user_id, swiped_user_id) DO UPDATE SET swipe_status = :swipe_status`, map[string]interface{}{
+		"user_id":        swipe.UserID,
+		"swiped_user_id": swipe.SwipedUserID,
+		"swipe_status":   swipe.SwipeStatus,
+		"created_at":     swipe.CreatedAt,
+	})
+	if err != nil {
+		if pgErr, ok := err.(*pq.Error); ok && pgErr.Code == uniqueConstraintCode {
+			return model.Match{}, ErrSwipeAlreadyExists
+		}
+		return model.Match{}, err
+	}
+
+	var count int
+	err = tx.GetContext(ctx, &count, `SELECT COUNT(*) FROM user_swipes 
+                                      WHERE user_id IN ($1, $2) AND swiped_user_id IN ($1, $2) AND swipe_status = true`, userID, swipedUserID)
+	if err != nil {
+		return model.Match{}, err
+	}
+
+	if count == 2 {
+		match := model.Match{
+			User1ID:   userID,
+			User2ID:   swipedUserID,
+			CreatedAt: time.Now(),
+		}
+		err = tx.GetContext(ctx, &match, `INSERT INTO matches (user1_id, user2_id, created_at) 
+                                           VALUES ($1, $2, $3) 
+                                           ON CONFLICT (user1_id, user2_id) DO NOTHING 
+                                           RETURNING id, user1_id, user2_id, created_at`, match.User1ID, match.User2ID, match.CreatedAt)
+		if err != nil {
+			fmt.Println("syntax err", err)
+			return model.Match{}, err
+		}
+
+		match.IsMatch = true
+		return match, nil
+	}
+
+	return model.Match{}, nil
 }

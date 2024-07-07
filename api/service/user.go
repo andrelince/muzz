@@ -11,6 +11,7 @@ import (
 type UserConnector interface {
 	CreateUser(ctx context.Context, user entity.UserInput) (entity.User, error)
 	Login(ctx context.Context, email, password string) (entity.Token, error)
+	Swipe(ctx context.Context, userID, swipeUserID int, action bool) (entity.Match, error)
 }
 
 type UserService struct {
@@ -65,4 +66,12 @@ func (s UserService) Login(ctx context.Context, email, password string) (entity.
 	}
 
 	return transformer.FromTokenModelToEntity(token), nil
+}
+
+func (s UserService) Swipe(ctx context.Context, userID, swipeUserID int, action bool) (entity.Match, error) {
+	swipe, err := s.userRepo.Swipe(ctx, userID, swipeUserID, action)
+	if err != nil {
+		return entity.Match{}, err
+	}
+	return transformer.FromMatchModelToEntity(swipe), nil
 }
