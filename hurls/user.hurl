@@ -11,6 +11,7 @@ HTTP 200
 [Asserts]
 header "Content-Type" contains "application/json"
 jsonpath "$.email" == "a@a.com"
-jsonpath "$.password" == "pword"
+jsonpath "$.password" != "pword"
+jsonpath "$.password" matches /^.+$/ # len > 0
 jsonpath "$.name" == "a"
 jsonpath "$.age" == 24

@@ -25,3 +25,10 @@ func FromUserModelToEntity(in model.User) entity.User {
 		DOB:      in.DOB,
 	}
 }
+
+func FromTokenModelToEntity(in model.Token) entity.Token {
+	return entity.Token{
+		Token:   in.Token,
+		Expires: in.Expires,
+	}
+}

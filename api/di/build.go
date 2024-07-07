@@ -70,14 +70,20 @@ func buildConfig(c *dig.Container) error {
 		return err
 	}
 
+	if err := c.Provide(func(l *logrus.Logger, r *redis.Redis, config config.Config) repository.AuthConnector {
+		return repository.NewAuthRepo(l, r, config.SecretKey)
+	}); err != nil {
+		return err
+	}
+
 	if err := c.Provide(func(l *logrus.Logger, p *pg.Postgres) repository.UserConnector {
 		return repository.NewUserRepo(l, p)
 	}); err != nil {
 		return err
 	}
 
-	if err := c.Provide(func(r repository.UserConnector) service.UserConnector {
-		return service.NewUserService(r)
+	if err := c.Provide(func(r repository.UserConnector, a repository.AuthConnector) service.UserConnector {
+		return service.NewUserService(r, a)
 	}); err != nil {
 		return err
 	}

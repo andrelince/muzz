@@ -25,3 +25,10 @@ func FromUserEntityToDef(in entity.User) definition.User {
 		Age:      getAge(in.DOB),
 	}
 }
+
+func FromTokenEntityToDef(in entity.Token) definition.Token {
+	return definition.Token{
+		Token:   in.Token,
+		Expires: in.Expires,
+	}
+}

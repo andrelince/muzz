@@ -20,5 +20,8 @@ func NewRest(log *logrus.Logger, router *http.ServeMux, r Handler) error {
 	// user
 	router.HandleFunc("POST /user/create", r.CreateUser)
 
+	// login
+	router.HandleFunc("POST /login", r.Login)
+
 	return nil
 }

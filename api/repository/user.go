@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/muzz/api/pkg/pg"
 	"github.com/muzz/api/repository/model"
@@ -11,6 +13,7 @@ import (
 //go:generate mockgen -destination=./mocks/mock_user_connector.go -package=mocks github.com/muzz/api/repository UserConnector
 type UserConnector interface {
 	CreateUser(ctx context.Context, user model.UserInput) (model.User, error)
+	GetUserByEmail(ctx context.Context, email string) (model.User, error)
 }
 
 type UserRepo struct {
@@ -42,5 +45,18 @@ func (r UserRepo) CreateUser(ctx context.Context, in model.UserInput) (model.Use
 		return out, err
 	}
 
+	return out, nil
+}
+
+func (r UserRepo) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
+	var out model.User
+
+	query := `SELECT * FROM users WHERE email = $1`
+	if err := r.db.DBX().Get(&out, query, email); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return model.User{}, errors.New("user not found")
+		}
+		return model.User{}, err
+	}
 	return out, nil
 }

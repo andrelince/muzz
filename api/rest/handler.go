@@ -60,7 +60,7 @@ func (h Handler) Health(writer http.ResponseWriter, request *http.Request) {
 // @Tags         user
 // @Produce      json
 // @Success      200  {object}  definitions.User
-// @Router       /user [post]
+// @Router       /user/create [post]
 //
 // @Param        user  body  definitions.UserInput  true  "user to create"
 func (h Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -94,6 +94,58 @@ func (h Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonOut, err := json.Marshal(transformer.FromUserEntityToDef(out))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonOut); err != nil {
+		WriteError(w, err)
+	}
+}
+
+// Login godoc
+//
+// @Summary      Authenticate a user
+// @Description  Perform the authentication/login of a user
+// @Tags         login
+// @Produce      json
+// @Success      200  {object}  definitions.Token
+// @Router       /user [post]
+//
+// @Param        user  body  definitions.LoginInput  true  "credentials to authenticate user"
+func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, errors.New("failed to read request body"))
+		return
+	}
+
+	var login definition.LoginInput
+	if err = json.Unmarshal(b, &login); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err := h.validator.Struct(login); err != nil {
+		h.log.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err)
+		return
+	}
+
+	out, err := h.userConn.Login(r.Context(), login.Email, login.Password)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		WriteError(w, err)
+		return
+	}
+
+	jsonOut, err := json.Marshal(transformer.FromTokenEntityToDef(out))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

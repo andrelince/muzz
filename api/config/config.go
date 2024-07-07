@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Port             string `env:"SRV_PORT" envDefault:"3000"`
 	MigrationPath    string `env:"MIGRATION_PATH"`
+	SecretKey        string `env:"SECRET_KEY"`
 	PostgresSettings pg.PostgresSettings
 	RedisSettings    redis.RedisSettings
 	LoggerSettings   logger.Settings

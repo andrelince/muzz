@@ -18,3 +18,8 @@ type User struct {
 	Gender   string
 	DOB      time.Time
 }
+
+type Token struct {
+	Token   string
+	Expires int64
+}
