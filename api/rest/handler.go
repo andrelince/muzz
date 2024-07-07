@@ -99,8 +99,8 @@ func (h Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(jsonOut); err != nil {
 		WriteError(w, err)
 	}
-	w.Header().Set("Content-Type", "application/json")
 }
