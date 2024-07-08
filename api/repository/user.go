@@ -27,6 +27,7 @@ type UserConnector interface {
 	CreateUser(ctx context.Context, user model.UserInput) (model.User, error)
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
 	Swipe(ctx context.Context, userID, swipedUserID int, status bool) (model.Match, error)
+	Discover(ctx context.Context, userID int) ([]model.User, error)
 }
 
 type UserRepo struct {
@@ -139,4 +140,25 @@ func (r UserRepo) Swipe(ctx context.Context, userID, swipedUserID int, status bo
 	}
 
 	return model.Match{}, nil
+}
+
+func (r UserRepo) Discover(ctx context.Context, userID int) ([]model.User, error) {
+	var users []model.User
+
+	query := `
+		SELECT u.* 
+		FROM users u
+		LEFT JOIN matches m1 ON (u.id = m1.user1_id OR u.id = m1.user2_id) AND (m1.user1_id = $1 OR m1.user2_id = $1)
+		LEFT JOIN user_swipes s ON u.id = s.swiped_user_id AND s.user_id = $1
+		WHERE u.id != $1 
+		AND m1.user1_id IS NULL 
+		AND s.user_id IS NULL
+	`
+
+	err := r.db.DBX().SelectContext(ctx, &users, query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

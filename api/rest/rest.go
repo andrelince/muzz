@@ -29,5 +29,9 @@ func NewRest(log *logrus.Logger, router *http.ServeMux, r Handler, auth middlewa
 		http.HandlerFunc(r.Swipe)),
 	)
 
+	//discover
+	router.Handle("GET /discover", auth.Handle(
+		http.HandlerFunc(r.Discover)),
+	)
 	return nil
 }

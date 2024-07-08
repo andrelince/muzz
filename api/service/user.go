@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/muzz/api/pkg/slice"
 	"github.com/muzz/api/repository"
 	"github.com/muzz/api/service/entity"
 	"github.com/muzz/api/service/transformer"
@@ -12,6 +13,7 @@ type UserConnector interface {
 	CreateUser(ctx context.Context, user entity.UserInput) (entity.User, error)
 	Login(ctx context.Context, email, password string) (entity.Token, error)
 	Swipe(ctx context.Context, userID, swipeUserID int, action bool) (entity.Match, error)
+	Discover(ctx context.Context, userID int) ([]entity.User, error)
 }
 
 type UserService struct {
@@ -74,4 +76,12 @@ func (s UserService) Swipe(ctx context.Context, userID, swipeUserID int, action 
 		return entity.Match{}, err
 	}
 	return transformer.FromMatchModelToEntity(swipe), nil
+}
+
+func (s UserService) Discover(ctx context.Context, userID int) ([]entity.User, error) {
+	profiles, err := s.userRepo.Discover(ctx, userID)
+	if err != nil {
+		return []entity.User{}, err
+	}
+	return slice.Map(profiles, transformer.FromUserModelToEntity), nil
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/muzz/api/pkg/slice"
 	"github.com/muzz/api/rest/definition"
 	"github.com/muzz/api/rest/middleware"
 	"github.com/muzz/api/rest/transformer"
@@ -212,6 +213,43 @@ func (h Handler) Swipe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonOut, err := json.Marshal(transformer.FromMatchEntityToDef(out))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonOut); err != nil {
+		WriteError(w, err)
+	}
+}
+
+// Discover godoc
+//
+// @Summary      Discover relevant profies
+// @Description  List profiles of potential match interest
+// @Tags         user
+// @Produce      json
+// @Success      200  {array}  definitions.User
+// @Router       /discover [get]
+func (h Handler) Discover(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	out, err := h.userConn.Discover(r.Context(), userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.log.Error(err)
+		WriteError(w, err)
+		return
+	}
+
+	jsonOut, err := json.Marshal(
+		slice.Map(out, transformer.FromUserEntityToDef),
+	)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
