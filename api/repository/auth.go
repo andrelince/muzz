@@ -29,8 +29,9 @@ type AuthRepo struct {
 
 func NewAuthRepo(l *logrus.Logger, cache *redis.Redis, secret string) AuthRepo {
 	return AuthRepo{
-		l:     l,
-		cache: cache,
+		l:      l,
+		cache:  cache,
+		secret: secret,
 	}
 }
 
