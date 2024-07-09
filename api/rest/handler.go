@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/muzz/api/pkg/slice"
@@ -239,7 +240,9 @@ func (h Handler) Discover(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := h.userConn.Discover(r.Context(), userID)
+	params := h.getDiscoverParams(r)
+
+	out, err := h.userConn.Discover(r.Context(), userID, params.Age, params.Gender)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		h.log.Error(err)
@@ -248,7 +251,7 @@ func (h Handler) Discover(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonOut, err := json.Marshal(
-		slice.Map(out, transformer.FromUserEntityToDef),
+		slice.Map(out, transformer.FromDiscoveryEntityToDef),
 	)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -258,5 +261,28 @@ func (h Handler) Discover(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(jsonOut); err != nil {
 		WriteError(w, err)
+	}
+}
+
+func (h Handler) getDiscoverParams(r *http.Request) discoverParams {
+	// Read age parameters
+	age := []int{}
+	minAgeStr := r.URL.Query().Get("min_age")
+	maxAgeStr := r.URL.Query().Get("max_age")
+	minAge, err := strconv.Atoi(minAgeStr)
+	if err == nil {
+		age = append(age, minAge)
+	}
+	maxAge, err := strconv.Atoi(maxAgeStr)
+	if err == nil {
+		age = append(age, maxAge)
+	}
+
+	// Read gender parameter
+	gender := r.URL.Query().Get("gender")
+
+	return discoverParams{
+		Gender: gender,
+		Age:    age,
 	}
 }

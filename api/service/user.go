@@ -13,7 +13,7 @@ type UserConnector interface {
 	CreateUser(ctx context.Context, user entity.UserInput) (entity.User, error)
 	Login(ctx context.Context, email, password string) (entity.Token, error)
 	Swipe(ctx context.Context, userID, swipeUserID int, action bool) (entity.Match, error)
-	Discover(ctx context.Context, userID int) ([]entity.User, error)
+	Discover(ctx context.Context, userID int, age []int, gender string) ([]entity.Discovery, error)
 }
 
 type UserService struct {
@@ -78,10 +78,10 @@ func (s UserService) Swipe(ctx context.Context, userID, swipeUserID int, action 
 	return transformer.FromMatchModelToEntity(swipe), nil
 }
 
-func (s UserService) Discover(ctx context.Context, userID int) ([]entity.User, error) {
-	profiles, err := s.userRepo.Discover(ctx, userID)
+func (s UserService) Discover(ctx context.Context, userID int, age []int, gender string) ([]entity.Discovery, error) {
+	profiles, err := s.userRepo.Discover(ctx, userID, age, gender)
 	if err != nil {
-		return []entity.User{}, err
+		return []entity.Discovery{}, err
 	}
-	return slice.Map(profiles, transformer.FromUserModelToEntity), nil
+	return slice.Map(profiles, transformer.FromDiscoveryModelToEntity), nil
 }

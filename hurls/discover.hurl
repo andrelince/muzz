@@ -5,11 +5,11 @@ POST http://localhost:3000/user/create
  "password": "pword",
  "name": "a",
  "gender": "M",
- "dob": "2000-01-01" 
+ "dob": "2000-01-01",
+ "locationLat": 38.72583954689884,
+ "locationLong": -9.245569404061271
 }
 HTTP 200
-[Captures]
-user1id: jsonpath "$['id']"
 
 # create user2
 POST http://localhost:3000/user/create
@@ -18,11 +18,11 @@ POST http://localhost:3000/user/create
  "password": "pword",
  "name": "b",
  "gender": "F",
- "dob": "2000-01-01" 
+ "dob": "2000-01-01",
+ "locationLat": 38.827564251494366,
+ "locationLong": -9.456503302312559
 }
 HTTP 200
-[Captures]
-user2id: jsonpath "$['id']"
 
 # login user 1
 POST http://localhost:3000/login
@@ -35,6 +35,6 @@ HTTP 200
 user1token: jsonpath "$['token']"
 
 # discover for user 1
-GET http://localhost:3000/discover
+GET http://localhost:3000/discover?gender=F&min_age=15&max_age=25
 Authorization: Bearer {{user1token}}
 HTTP 200

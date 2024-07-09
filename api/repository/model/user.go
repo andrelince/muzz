@@ -3,20 +3,24 @@ package model
 import "time"
 
 type UserInput struct {
-	Email    string `db:"email"`
-	Password string `db:"password"`
-	Name     string `db:"name"`
-	Gender   string `db:"gender"`
-	DOB      string `db:"date_of_birth"`
+	Email        string   `db:"email"`
+	Password     string   `db:"password"`
+	Name         string   `db:"name"`
+	Gender       string   `db:"gender"`
+	DOB          string   `db:"date_of_birth"`
+	LocationLat  *float64 `db:"location_lat"`
+	LocationLong *float64 `db:"location_long"`
 }
 
 type User struct {
-	ID       int64     `db:"id"`
-	Email    string    `db:"email"`
-	Password string    `db:"password"`
-	Name     string    `db:"name"`
-	Gender   string    `db:"gender"`
-	DOB      time.Time `db:"date_of_birth"`
+	ID           int64     `db:"id"`
+	Email        string    `db:"email"`
+	Password     string    `db:"password"`
+	Name         string    `db:"name"`
+	Gender       string    `db:"gender"`
+	DOB          time.Time `db:"date_of_birth"`
+	LocationLat  *float64  `db:"location_lat"`
+	LocationLong *float64  `db:"location_long"`
 }
 
 type Swipe struct {
@@ -33,4 +37,10 @@ type Match struct {
 	User2ID   int `db:"user2_id"`
 	IsMatch   bool
 	CreatedAt time.Time `db:"created_at"`
+}
+
+type Discovery struct {
+	User                User    `db:"user"`
+	DistanceFromMe      float64 `db:"distance_from_me"`
+	AttractivenessScore int     `db:"attractiveness_score"`
 }

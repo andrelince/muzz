@@ -18,3 +18,8 @@ func DOBValidator(fl validator.FieldLevel) bool {
 	_, err := time.Parse("2006-01-02", dob)
 	return err == nil
 }
+
+type discoverParams struct {
+	Age    []int
+	Gender string
+}

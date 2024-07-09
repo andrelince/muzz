@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/muzz/api/pkg/pg"
@@ -27,7 +28,7 @@ type UserConnector interface {
 	CreateUser(ctx context.Context, user model.UserInput) (model.User, error)
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
 	Swipe(ctx context.Context, userID, swipedUserID int, status bool) (model.Match, error)
-	Discover(ctx context.Context, userID int) ([]model.User, error)
+	Discover(ctx context.Context, userID int, age []int, gender string) ([]model.Discovery, error)
 }
 
 type UserRepo struct {
@@ -43,8 +44,8 @@ func NewUserRepo(l *logrus.Logger, db *pg.Postgres) UserRepo {
 }
 
 func (r UserRepo) CreateUser(ctx context.Context, in model.UserInput) (model.User, error) {
-	query := `INSERT INTO users (email, password, name, gender, date_of_birth) 
-              VALUES (:email, :password, :name, :gender, :date_of_birth) RETURNING *`
+	query := `INSERT INTO users (email, password, name, gender, date_of_birth, location_lat, location_long) 
+              VALUES (:email, :password, :name, :gender, :date_of_birth, :location_lat, :location_long) RETURNING *`
 
 	var out model.User
 	stmt, err := r.db.DBX().PrepareNamed(query)
@@ -142,23 +143,59 @@ func (r UserRepo) Swipe(ctx context.Context, userID, swipedUserID int, status bo
 	return model.Match{}, nil
 }
 
-func (r UserRepo) Discover(ctx context.Context, userID int) ([]model.User, error) {
-	var users []model.User
+func (r UserRepo) Discover(ctx context.Context, userID int, age []int, gender string) ([]model.Discovery, error) {
+	var results []model.Discovery
 
-	query := `
-		SELECT u.* 
-		FROM users u
-		LEFT JOIN matches m1 ON (u.id = m1.user1_id OR u.id = m1.user2_id) AND (m1.user1_id = $1 OR m1.user2_id = $1)
-		LEFT JOIN user_swipes s ON u.id = s.swiped_user_id AND s.user_id = $1
-		WHERE u.id != $1 
-		AND m1.user1_id IS NULL 
-		AND s.user_id IS NULL
-	`
-
-	err := r.db.DBX().SelectContext(ctx, &users, query, userID)
+	// Get the current user's location
+	var currentUser model.User
+	err := r.db.DBX().GetContext(ctx, &currentUser, "SELECT location_lat, location_long FROM users WHERE id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
 
-	return users, nil
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	query := psql.Select(
+		`u.id AS "user.id"`,
+		`u.name AS "user.name"`,
+		`u.email AS "user.email"`,
+		`u.gender AS "user.gender"`,
+		`u.date_of_birth AS "user.date_of_birth"`,
+		`u.location_lat AS "user.location_lat"`,
+		`u.location_long AS "user.location_long"`,
+		"(SELECT COUNT(*) FROM user_swipes s WHERE s.swiped_user_id = u.id AND s.swipe_status = true) AS attractiveness_score",
+		`earth_distance(
+			ll_to_earth(COALESCE($1, 0), COALESCE($2, 0)), 
+			ll_to_earth(COALESCE(u.location_lat, 0), COALESCE(u.location_long, 0))
+		) AS distance_from_me`,
+	).
+		From("users u").
+		LeftJoin("matches m1 ON (u.id = m1.user1_id OR u.id = m1.user2_id) AND (m1.user1_id = $1 OR m1.user2_id = $3)").
+		LeftJoin("user_swipes s ON u.id = s.swiped_user_id AND s.user_id = $3").
+		Where("u.id != $3").
+		Where("m1.user1_id IS NULL").
+		Where("s.user_id IS NULL").
+		OrderBy("distance_from_me", "attractiveness_score DESC")
+
+	args := []interface{}{currentUser.LocationLat, currentUser.LocationLong, userID}
+
+	if len(age) == 2 {
+		query = query.Where(fmt.Sprintf("DATE_PART('year', AGE(u.date_of_birth)) BETWEEN %d AND %d", age[0], age[1]))
+	}
+
+	if gender != "" {
+		query = query.Where(fmt.Sprintf("u.gender = '%s'", gender))
+	}
+
+	sql, _, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.db.DBX().SelectContext(ctx, &results, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
