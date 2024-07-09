@@ -35,6 +35,8 @@ The returing profiles are sorted by attractiveness_score and closer distance to 
 
 - `/swagger`: auto generated api docs 
 
+- `/healthz`: for checking service is healthy
+
 - `/user/create`: for creating a profile
 
 - `/login`: for authenticating a user
@@ -58,3 +60,5 @@ All requests go through a layer of validation using the `https://github.com/go-p
 - Optimize discover query: The discover query would perform badly in large datasets, specially the portion where the `attractiveness_score` is calculated. This calculation could be abstracted in a db view.
 
 - Add ci/cd pipeline to run unit tests and hurl e2e tests
+
+- Improve `/healthz` by pinging db and cache for ensuring connections/repositories are up
