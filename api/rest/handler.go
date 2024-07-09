@@ -41,12 +41,12 @@ func NewHandler(
 
 // Healthz godoc
 //
-//	@Summary      Check service health
-//	@Description  Check service health condition
-//	@Tags         health
-//	@Produce      plain
-//	@Success      200  {string}  string  "OK"
-//	@Router       /healthz [get]
+//  @Summary      Check service health
+//  @Description  Check service health condition
+//  @Tags         health
+//  @Produce      plain
+//  @Success      200  {string}  string  "OK"
+//  @Router       /healthz [get]
 func (h Handler) Health(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 
@@ -62,10 +62,10 @@ func (h Handler) Health(writer http.ResponseWriter, request *http.Request) {
 // @Description  Create a user in the system
 // @Tags         user
 // @Produce      json
-// @Success      200  {object}  definitions.User
+// @Success      200  {object}  definition.User
 // @Router       /user/create [post]
 //
-// @Param        user  body  definitions.UserInput  true  "user to create"
+// @Param        user  body  definition.UserInput  true  "user to create"
 func (h Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -114,10 +114,10 @@ func (h Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 // @Description  Perform the authentication/login of a user
 // @Tags         login
 // @Produce      json
-// @Success      200  {object}  definitions.Token
+// @Success      200  {object}  definition.Token
 // @Router       /user [post]
 //
-// @Param        user  body  definitions.LoginInput  true  "credentials to authenticate user"
+// @Param        user  body  definition.LoginInput  true  "credentials to authenticate user"
 func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -166,10 +166,10 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 // @Description  Perform the swipe action on a give user
 // @Tags         login
 // @Produce      json
-// @Success      200  {object}  definitions.Swipe
+// @Success      200  {object}  definition.Match
 // @Router       /swipe [post]
 //
-// @Param        user  body  definitions.SwipeInput  true  "swipe data"
+// @Param        user  body  definition.SwipeInput  true  "swipe data"
 func (h Handler) Swipe(w http.ResponseWriter, r *http.Request) {
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
@@ -231,7 +231,10 @@ func (h Handler) Swipe(w http.ResponseWriter, r *http.Request) {
 // @Description  List profiles of potential match interest
 // @Tags         user
 // @Produce      json
-// @Success      200  {array}  definitions.User
+// @Success      200      {array}  definition.Discovery
+// @Param        min_age  query    int     false  "minimum profile age"
+// @Param        max_age  query    int     false  "minimum profile age"
+// @Param        gender   query    string  false  "M or F"
 // @Router       /discover [get]
 func (h Handler) Discover(w http.ResponseWriter, r *http.Request) {
 	userID, err := middleware.GetUserIDFromContext(r.Context())

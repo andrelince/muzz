@@ -1,3 +1,94 @@
+definitions:
+  definition.Discovery:
+    properties:
+      attractiveness:
+        type: integer
+      distance:
+        type: number
+      user:
+        $ref: '#/definitions/definition.User'
+    type: object
+  definition.LoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  definition.Match:
+    properties:
+      match_id:
+        type: integer
+      matched:
+        type: boolean
+    type: object
+  definition.SwipeInput:
+    properties:
+      preference:
+        enum:
+        - "yes"
+        - "no"
+        type: string
+      user_id:
+        type: integer
+    required:
+    - user_id
+    type: object
+  definition.Token:
+    properties:
+      expires:
+        type: integer
+      token:
+        type: string
+    type: object
+  definition.User:
+    properties:
+      age:
+        type: integer
+      email:
+        type: string
+      gender:
+        type: string
+      id:
+        type: integer
+      location_lat:
+        type: number
+      location_long:
+        type: number
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  definition.UserInput:
+    properties:
+      dob:
+        type: string
+      email:
+        type: string
+      gender:
+        enum:
+        - M
+        - F
+        type: string
+      locationLat:
+        type: number
+      locationLong:
+        type: number
+      name:
+        type: string
+      password:
+        description: implement hash
+        type: string
+    required:
+    - dob
+    - email
+    - name
+    - password
+    type: object
 host: localhost:3000
 info:
   contact: {}
@@ -5,6 +96,34 @@ info:
   title: Muzz API
   version: "1.0"
 paths:
+  /discover:
+    get:
+      description: List profiles of potential match interest
+      parameters:
+      - description: minimum profile age
+        in: query
+        name: min_age
+        type: integer
+      - description: minimum profile age
+        in: query
+        name: max_age
+        type: integer
+      - description: M or F
+        in: query
+        name: gender
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/definition.Discovery'
+            type: array
+      summary: Discover relevant profies
+      tags:
+      - user
   /healthz:
     get:
       description: Check service health condition
@@ -18,4 +137,64 @@ paths:
       summary: Check service health
       tags:
       - health
+  /swipe:
+    post:
+      description: Perform the swipe action on a give user
+      parameters:
+      - description: swipe data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/definition.SwipeInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/definition.Match'
+      summary: Swipe a user
+      tags:
+      - login
+  /user:
+    post:
+      description: Perform the authentication/login of a user
+      parameters:
+      - description: credentials to authenticate user
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/definition.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/definition.Token'
+      summary: Authenticate a user
+      tags:
+      - login
+  /user/create:
+    post:
+      description: Create a user in the system
+      parameters:
+      - description: user to create
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/definition.UserInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/definition.User'
+      summary: Create a user
+      tags:
+      - user
 swagger: "2.0"

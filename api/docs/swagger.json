@@ -8,6 +8,49 @@
     },
     "host": "localhost:3000",
     "paths": {
+        "/discover": {
+            "get": {
+                "description": "List profiles of potential match interest",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Discover relevant profies",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "minimum profile age",
+                        "name": "min_age",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "minimum profile age",
+                        "name": "max_age",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "M or F",
+                        "name": "gender",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/definition.Discovery"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/healthz": {
             "get": {
                 "description": "Check service health condition",
@@ -25,6 +68,236 @@
                             "type": "string"
                         }
                     }
+                }
+            }
+        },
+        "/swipe": {
+            "post": {
+                "description": "Perform the swipe action on a give user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "login"
+                ],
+                "summary": "Swipe a user",
+                "parameters": [
+                    {
+                        "description": "swipe data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/definition.SwipeInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/definition.Match"
+                        }
+                    }
+                }
+            }
+        },
+        "/user": {
+            "post": {
+                "description": "Perform the authentication/login of a user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "login"
+                ],
+                "summary": "Authenticate a user",
+                "parameters": [
+                    {
+                        "description": "credentials to authenticate user",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/definition.LoginInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/definition.Token"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/create": {
+            "post": {
+                "description": "Create a user in the system",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Create a user",
+                "parameters": [
+                    {
+                        "description": "user to create",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/definition.UserInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/definition.User"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "definition.Discovery": {
+            "type": "object",
+            "properties": {
+                "attractiveness": {
+                    "type": "integer"
+                },
+                "distance": {
+                    "type": "number"
+                },
+                "user": {
+                    "$ref": "#/definitions/definition.User"
+                }
+            }
+        },
+        "definition.LoginInput": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "definition.Match": {
+            "type": "object",
+            "properties": {
+                "match_id": {
+                    "type": "integer"
+                },
+                "matched": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "definition.SwipeInput": {
+            "type": "object",
+            "required": [
+                "user_id"
+            ],
+            "properties": {
+                "preference": {
+                    "type": "string",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ]
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "definition.Token": {
+            "type": "object",
+            "properties": {
+                "expires": {
+                    "type": "integer"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "definition.User": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "location_lat": {
+                    "type": "number"
+                },
+                "location_long": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "definition.UserInput": {
+            "type": "object",
+            "required": [
+                "dob",
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "dob": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string",
+                    "enum": [
+                        "M",
+                        "F"
+                    ]
+                },
+                "locationLat": {
+                    "type": "number"
+                },
+                "locationLong": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "description": "implement hash",
+                    "type": "string"
                 }
             }
         }
